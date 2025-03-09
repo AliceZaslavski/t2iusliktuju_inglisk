@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Mood Tracker</h1>
+        <label>Select Year: <input type="number" id="year" value="2025" min="2000" max="2100"></label>
+
+        <!-- Calendar Table -->
+        <div id="calendar-wrapper">
+            <table id="mood-calendar">
+                <thead>
+                    <tr id="days-header">
+                        <th class="fixed-cell"></th> <!-- Empty corner cell -->
+                    </tr>
+                </thead>
+                <tbody id="calendar-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Mood Selection -->
+        <div id="mood-section">
+            <h2>Select Moods and Percentages:</h2>
+            <div id="mood-buttons"></div>
+            <button class="primary-btn" id="add-mood">+ Add New Mood</button>
+            <button class="primary-btn" id="save-btn">💾 Save</button>
+        </div>
+
+        <!-- Popup for Adding New Mood -->
+        <div id="newMoodPopup" class="popup hidden">
+            <label>New Mood:</label>
+            <input type="text" id="newMoodInput">
+            <label>Select Color:</label>
+            <input type="color" id="newMoodColor">
+            <button id="confirm-add-mood">✅ Add</button>
+            <button id="cancel-add-mood">❌ Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
