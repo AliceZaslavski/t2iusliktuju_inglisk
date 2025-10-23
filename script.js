@@ -43,18 +43,29 @@ function closeMoodPopup() {
 }
 
 function addNewMood() {
-  const newMoodName = document.getElementById('newMoodInput').value.trim();
+  const inputEl = document.getElementById('newMoodInput');
+  const colorEl = document.getElementById('newMoodColor');
+
+  const newMoodName = (inputEl.value || "").trim();
   if (!newMoodName) return;
 
   // väldi duplikaate (case-insensitive)
   const exists = Object.keys(userMoods).some(m => m.toLowerCase() === newMoodName.toLowerCase());
-  if (exists) return;
+  if (exists) {
+    alert("See tuju on juba olemas.");
+    return;
+  }
 
-  const newMoodColor = document.getElementById('newMoodColor').value || "#cccccc";
+  const newMoodColor = colorEl.value || "#cccccc";
   userMoods[newMoodName] = newMoodColor;
 
   persistUserMoods();              // ⬅️ salvesta kohe
   generateMoodButtons();
+
+  // puhasta sisendid
+  inputEl.value = "";
+  colorEl.value = "#cccccc";
+
   closeMoodPopup();
 }
 
@@ -94,6 +105,7 @@ function generateMoodButtons() {
     const removeBtn = document.createElement('button');
     removeBtn.classList.add('remove-mood');
     removeBtn.textContent = "❌";
+    removeBtn.title = "Eemalda tuju";
     removeBtn.addEventListener("click", () => {
       delete userMoods[mood];
       persistUserMoods();
@@ -221,6 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("confirm-add-mood").addEventListener("click", addNewMood);
   document.getElementById("cancel-add-mood").addEventListener("click", closeMoodPopup);
   document.getElementById("save-btn").addEventListener("click", saveMood);
+
   const yearEl = document.getElementById("year");
   if (yearEl) yearEl.addEventListener("input", renderCalendar);
 });
