@@ -15,6 +15,64 @@ let selectedDate = null;
 let userMoods = { ...moodsData };
 let selectedCell = null;
 
+// --- eesti -> inglise nimede kaardistus (migratsiooniks) ---
+const etToEn = {
+  "Tänulik": "Grateful",
+  "Üksildane": "Lonely",
+  "Segaduses": "Confused",
+  "Innustunud": "Inspired",
+  "Ärev": "Anxious",
+  "Rahulik": "Calm",
+  "Vihane": "Angry",
+  "Kurb": "Sad",
+  "Rõõmus": "Happy",
+  "Mäh": "Meh"
+};
+const MIGRATION_FLAG = "moodWidget:migratedToEN";
+
+// --- MIGRATSIOON: tõlgib salvestatud tujunimed ja päevade kirjed inglise keelde ---
+function migrateStorageToEnglish() {
+  if (localStorage.getItem(MIGRATION_FLAG) === "1") return;
+
+  // 1) Tõlgi tujulist
+  const storedMoodsRaw = localStorage.getItem("userMoods");
+  if (storedMoodsRaw) {
+    try {
+      const storedMoods = JSON.parse(storedMoodsRaw) || {};
+      const migrated = {};
+      Object.keys(storedMoods).forEach(name => {
+        const en = etToEn[name] || name;
+        // väldi ülekirjutamist: kui mõlemad eksisteerivad, eelista olemasoleva värvi loogikat
+        if (!(en in migrated)) migrated[en] = storedMoods[name];
+      });
+      localStorage.setItem("userMoods", JSON.stringify(migrated));
+    } catch (_) {}
+  }
+
+  // 2) Tõlgi kõigi päevade sisu (võtmed stiilis 1/1/2025 või 1/1)
+  const dateKeyRegex = /^\d{1,2}\/\d{1,2}(?:\/\d{4})?$/;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    if (!dateKeyRegex.test(key)) continue;
+    try {
+      const dayArr = JSON.parse(localStorage.getItem(key) || "[]");
+      if (Array.isArray(dayArr)) {
+        const migratedDay = dayArr.map(item => {
+          if (item && typeof item === "object") {
+            const en = etToEn[item.mood] || item.mood;
+            return { ...item, mood: en };
+          }
+          return item;
+        });
+        localStorage.setItem(key, JSON.stringify(migratedDay));
+      }
+    } catch (_) {}
+  }
+
+  localStorage.setItem(MIGRATION_FLAG, "1");
+}
+
 // --- laadimine / salvestamine ---
 function loadUserMoods() {
   const stored = localStorage.getItem("userMoods");
@@ -52,14 +110,14 @@ function addNewMood() {
   // väldi duplikaate (case-insensitive)
   const exists = Object.keys(userMoods).some(m => m.toLowerCase() === newMoodName.toLowerCase());
   if (exists) {
-    alert("See tuju on juba olemas.");
+    alert("This mood already exists.");
     return;
   }
 
   const newMoodColor = colorEl.value || "#cccccc";
   userMoods[newMoodName] = newMoodColor;
 
-  persistUserMoods();              // ⬅️ salvesta kohe
+  persistUserMoods();
   generateMoodButtons();
 
   // puhasta sisendid
@@ -94,7 +152,7 @@ function generateMoodButtons() {
     colorPicker.type = "color";
     colorPicker.value = userMoods[mood];
 
-    // ⬇️ värvi muutus salvestub kohe
+    // värvi muutus salvestub kohe
     colorPicker.addEventListener("input", () => {
       const val = colorPicker.value;
       button.style.backgroundColor = val;
@@ -105,7 +163,7 @@ function generateMoodButtons() {
     const removeBtn = document.createElement('button');
     removeBtn.classList.add('remove-mood');
     removeBtn.textContent = "❌";
-    removeBtn.title = "Eemalda tuju";
+    removeBtn.title = "Remove mood";
     removeBtn.addEventListener("click", () => {
       delete userMoods[mood];
       persistUserMoods();
@@ -128,7 +186,7 @@ function saveMood() {
 
   const selectedMoods = [];
   document.querySelectorAll('.mood-wrapper').forEach(wrapper => {
-    const mood = wrapper.querySelector('button').textContent;
+    const mood = wrapper.querySelector('button').textContent; // juba EN pärast migratsiooni
     const percentage = parseInt(wrapper.querySelector('select').value, 10);
     const color = wrapper.querySelector('input[type="color"]').value;
 
@@ -223,9 +281,10 @@ function createGradientBackground(moods) {
   return `linear-gradient(to bottom right, ${gradientStops.join(', ')})`;
 }
 
-// --- käivitus (üks kord) ---
+// --- käivitus ---
 document.addEventListener("DOMContentLoaded", () => {
-  loadUserMoods();                    // ⬅️ kõigepealt loe salvestatud tujud
+  migrateStorageToEnglish();   // ⬅️ tee ühekordne tõlge EN-iks
+  loadUserMoods();             // ⬅️ nüüd lae juba ingliskeelne loend
   generateMoodButtons();
   renderCalendar();
 
